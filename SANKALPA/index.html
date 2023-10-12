@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSV Processor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>CSV Processor</h1>
+    <form action="process.php" method="post" enctype="multipart/form-data" id="csvForm">
+        <label for="csvFile">Choose a CSV file:</label>
+        <input type="file" name="csvFile" id="csvFile" accept=".csv" required>
+        <br>
+        <button type="submit">Upload CSV</button>
+    </form>
+
+    <hr>
+
+    <h2>Processed CSV:</h2>
+    <a id="downloadLink" style="display: none" download="processed.csv">
+        <button id="downloadButton" style="display: none">Download Processed CSV</button>
+    </a>
+
+    <table id="csvTable" style="display: none"></table>
+
+    <p id="deletedRowsLabel" style="display: none">Deleted Rows:</p>
+    <ul id="deletedRowsList" style="display: none"></ul>
+
+    <script>
+        document.getElementById("csvForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            // Get the uploaded file
+            const fileInput = document.getElementById("csvFile");
+            const file = fileInput.files[0];
+
+            if (file) {
+                // Read the file content
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const csvData = e.target.result;
+
+                    // Process the CSV data (remove empty rows and columns)
+                    const { processedCsv, deletedRows } = processCSV(csvData);
+
+                    // Create a download link
+                    const downloadLink = document.getElementById("downloadLink");
+                    const downloadButton = document.getElementById("downloadButton");
+                    const csvTable = document.getElementById("csvTable");
+                    const deletedRowsLabel = document.getElementById("deletedRowsLabel");
+                    const deletedRowsList = document.getElementById("deletedRowsList");
+
+                    const blob = new Blob([processedCsv], { type: "text/csv" });
+                    const url = window.URL.createObjectURL(blob);
+                    downloadLink.href = url;
+                    downloadButton.style.display = "block";
+                    downloadLink.style.display = "block";
+
+                    // Display the processed CSV as a table
+                    csvTable.innerHTML = processedCsvToTable(processedCsv);
+                    csvTable.style.display = "block";
+
+                    // Display deleted rows
+                    if (deletedRows.length > 0) {
+                        deletedRowsLabel.style.display = "block";
+                        deletedRowsList.style.display = "block";
+                        deletedRowsList.innerHTML = deletedRowsToHTML(deletedRows);
+                    }
+                };
+
+                reader.readAsText(file);
+            }
+        });
+
+        function processCSV(csvData) {
+            // Implement CSV processing logic here (e.g., remove empty rows and columns)
+            // This example removes rows with any empty cells
+            const rows = csvData.split('\n');
+            const deletedRows = [];
+            const filteredRows = rows.filter(row => {
+                const cells = row.split(',');
+                if (cells.some(cell => cell.trim() === '')) {
+                    deletedRows.push(row);
+                    return false;
+                }
+                return true;
+            });
+
+            const processedCsv = filteredRows.join('\n');
+            return { processedCsv, deletedRows };
+        }
+
+        function processedCsvToTable(processedCsv) {
+            // Convert the processed CSV data into an HTML table
+            // This is a simplified example
+            const rows = processedCsv.split('\n');
+            const tableHTML = '<table border="1"><thead><tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr></thead><tbody>';
+            rows.forEach(row => {
+                tableHTML += '<tr>';
+                row.split(',').forEach(cell => {
+                    tableHTML += `<td>${cell}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+            return tableHTML;
+        }
+
+        function deletedRowsToHTML(deletedRows) {
+            // Convert deleted rows into an HTML list
+            // This is a simplified example
+            let listHTML = '';  
+            deletedRows.forEach(row => {
+                listHTML += `<li>${row}</li>`;
+            });
+            return listHTML;
+        }
+    </script>
+</body>
+</html>
